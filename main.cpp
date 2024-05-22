@@ -19,7 +19,7 @@ int server_fd, client_fd, rclen;
 char* mainbuf;
 Worker **workers;
 Scheduler *main_scheduler;
-int num_workers = 8;
+int num_workers;
 
 int init_socket() {
     mainbuf = (char *)malloc(BUF_SIZE * sizeof(char));
@@ -31,20 +31,6 @@ int init_socket() {
         return 1;
     }
     
-    printf("Successfully initalized socket\n");
-    return 0;
-}
-
-int main(int argc, char *argv[]) {
-    if(argc < 2) {
-        printf("The number of workers should be given\n");
-        return 0;
-    }
-
-    if(init_socket()) {
-        return 0;
-    }
-
     int opt = 1;
     setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt));
 
@@ -54,9 +40,14 @@ int main(int argc, char *argv[]) {
 
     if(-1 == bind(server_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) {
         printf("bind error\n");
-        return 0;
+        return 2;
     }
+    
+    printf("Successfully initalized socket\n");
+    return 0;
+}
 
+void init_threads() {
     workers = (Worker **)malloc(num_workers * sizeof(Worker *));
     for(int i = 0 ; i < num_workers ; i++) {
         workers[i] = new Worker(i, server_fd);
@@ -65,6 +56,21 @@ int main(int argc, char *argv[]) {
 
     main_scheduler = new Scheduler(workers, num_workers);
     main_scheduler -> init();
+}
+
+int main(int argc, char *argv[]) {
+    if(argc < 2) {
+        printf("The number of workers should be given\n");
+        return 0;
+    }
+
+    num_workers = atoi(argv[1]);
+
+    if(init_socket()) {
+        return 0;
+    }
+
+    init_threads();
 
     while(1) {
         rclen = recvfrom(server_fd, mainbuf, BUF_SIZE, 0, (struct sockaddr*)&cli_addr, &addrlen);
