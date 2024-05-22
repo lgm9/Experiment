@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include "scheduler.h"
+#include "payload.h"
 #define BUF_SIZE 128
 
 Scheduler::Scheduler(Worker** ws, int n_w) {

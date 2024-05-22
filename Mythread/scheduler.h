@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <queue>
 #include "worker.h"
+#include "payload.h"
 
 class Scheduler {
     pthread_t w_thread;

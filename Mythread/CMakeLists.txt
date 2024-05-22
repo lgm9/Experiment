@@ -1,1 +1,1 @@
-add_library(Mythread worker.cpp scheduler.cpp)
+add_library(Mythread worker.cpp scheduler.cpp payload.cpp)

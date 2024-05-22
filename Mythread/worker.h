@@ -2,15 +2,7 @@
 #include<pthread.h>
 #include <sys/socket.h>
 #include <queue>
-
-class Payload {
-    int len;
-
-    public:
-        char* buf;
-        struct sockaddr_in addr;
-        Payload(int, char*, struct sockaddr_in);
-};
+#include "payload.h"
 
 class Worker {
     int ID;
