@@ -3,23 +3,29 @@
 #include <sys/socket.h>
 #include <queue>
 #include "payload.h"
+#include "rocksdb/db.h"
 
 class Worker {
     int ID;
     int sockfd;
-    char* buf;
+    char* buf, *key, *value;
     Payload* pl;
     pthread_t w_thread;
     std::queue<Payload *> Q;
+    rocksdb::DB* db;
+    int i;
+    inline int parselen();
 
     public:
         pthread_mutex_t *lock;
         pthread_cond_t *cv;
-        Worker(int, int, pthread_mutex_t*, pthread_cond_t*);
+        Worker(int, int, pthread_mutex_t*, pthread_cond_t*, rocksdb::DB*);
         void push(Payload *);
         int work();
-        int join();
         int init();
+        ~Worker() {
+            free(buf);
+        }
 };
 
 static void* work_wrapper(void *);

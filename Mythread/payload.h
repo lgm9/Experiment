@@ -2,10 +2,13 @@
 #include <sys/socket.h>
 
 class Payload {
-    int len;
 
     public:
         char* buf;
+        int len;
         struct sockaddr_in addr;
         Payload(int, char*, struct sockaddr_in);
+        ~Payload(){
+            free(buf);
+        }
 };

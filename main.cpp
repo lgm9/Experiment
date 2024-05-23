@@ -14,16 +14,22 @@
 #include "payload.h"
 #define BUF_SIZE 128
 
+rocksdb::DB* db;
+rocksdb::Options options;
+rocksdb::Status status;
+
 struct sockaddr_in serv_addr, cli_addr;
 socklen_t addrlen = sizeof(cli_addr);
 int server_fd, client_fd, rclen;
 char* mainbuf;
+
 Worker **workers;
 Scheduler *main_scheduler;
 pthread_mutex_t scheduler_lock;
 pthread_mutex_t *worker_lock;
 pthread_cond_t scheduler_cond;
 pthread_cond_t* worker_cond;
+
 int num_workers;
 
 int init_socket() {
@@ -52,6 +58,13 @@ int init_socket() {
     return 0;
 }
 
+void init_db() {
+    options.create_if_missing = true;
+    status = rocksdb::DB::Open(options, "/tmp/testdb", &db);
+    assert(status.ok());
+    printf("Initialized DB\n");
+}
+
 void init_worker() {
     workers = (Worker **)malloc(num_workers * sizeof(Worker *));
     worker_lock = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t) * num_workers);
@@ -60,10 +73,10 @@ void init_worker() {
     for(int i = 0 ; i < num_workers ; i++) {
         pthread_mutex_init(&worker_lock[i], NULL);
         pthread_cond_init(&worker_cond[i], NULL);
-
-        workers[i] = new Worker(i, server_fd, &worker_lock[i], &worker_cond[i]);
+        workers[i] = new Worker(i, server_fd, &worker_lock[i], &worker_cond[i], db);
         workers[i] -> init(); 
     }
+    printf("Initialized workers\n");
 }
 
 void socket_loop() {
@@ -91,7 +104,8 @@ int main(int argc, char *argv[]) {
     if(init_socket()) {
         return 0;
     }
-
+    
+    init_db();
     init_worker();
     init_scheduler();
     socket_loop();
