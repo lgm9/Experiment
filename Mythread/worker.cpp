@@ -10,14 +10,21 @@
 #include "payload.h"
 #define BUF_SIZE 128
 
-Worker::Worker(int n_ID, int fd) {
+Worker::Worker(int n_ID, int fd, pthread_mutex_t* inlock, pthread_cond_t* cond) {
     ID = n_ID;
     sockfd = fd;
+    lock = inlock;
+    cv = cond;
 }
 
 int Worker::work() {
     while(1) {
-        if(!Q.empty()) {
+        if(Q.empty()) {
+            pthread_mutex_lock(lock);
+            pthread_cond_wait(cv, lock);
+            pthread_mutex_unlock(lock);
+        }
+        while(!Q.empty()) {
             pl = Q.front();
             Q.pop();
             if((pl -> buf)[0] == 'S') {
@@ -33,6 +40,7 @@ int Worker::work() {
                 buf[3] = 0;
                 sendto(sockfd, buf, strlen(buf), 0, (struct sockaddr*)&(pl -> addr), sizeof(pl -> addr));
             }
+            free(pl -> buf);
             delete(pl);
         }
     }

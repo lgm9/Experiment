@@ -13,7 +13,9 @@ class Scheduler {
     int curidx;
 
     public:
-        Scheduler(Worker**, int);
+        pthread_mutex_t *lock;
+        pthread_cond_t *cv;
+        Scheduler(Worker**, int, pthread_mutex_t*, pthread_cond_t*);
         void push(Payload *);
         int init();
         void main_loop();

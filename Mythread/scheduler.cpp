@@ -10,15 +10,23 @@
 #include "payload.h"
 #define BUF_SIZE 128
 
-Scheduler::Scheduler(Worker** ws, int n_w) {
+Scheduler::Scheduler(Worker** ws, int n_w, pthread_mutex_t* inlock, pthread_cond_t* cond) {
     workers = ws;
     n_workers = n_w;
+    lock = inlock;
+    cv = cond;
 }
 
 void Scheduler::main_loop() {
     while(1) {
-        if(!Q.empty()) {
+        if(Q.empty()) {
+            pthread_mutex_lock(lock);
+            pthread_cond_wait(cv, lock);
+            pthread_mutex_unlock(lock);
+        }
+        while(!Q.empty()) {
             workers[curidx] -> push(Q.front());
+            pthread_cond_signal(workers[curidx] -> cv);
             Q.pop();
             curidx = (curidx + 1) % n_workers;
         }
